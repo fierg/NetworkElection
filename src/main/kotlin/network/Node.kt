@@ -47,11 +47,11 @@ open class Node(
     @OptIn(DelicateCoroutinesApi::class)
     private fun startElectionAtRandomTime(){
         GlobalScope.launch {
-            sleep(Random.nextInt(1000))
+            sleep(Random.nextInt(500))
             if (Random.nextDouble(0.0,1.0) < p){
                 startElection()
             } else {
-                sleep(1000 + Random.nextInt(1000))
+                sleep(500 + Random.nextInt(100))
             }
         }
     }
@@ -62,25 +62,50 @@ open class Node(
         network.sendToNeighbors(id, m.toJson())
     }
 
+    private fun declareWin() {
+        System.out.println("Node $id - declared win")
+        val m: Message = Message().add("WIN", id)
+        network.sendToNeighbors(id, m.toJson())
+    }
+
     private fun propagateElection(leadingID: Int){
+        currentElectionLeader = leadingID
         System.out.println("Node $id - propagated election - leading id is $leadingID")
         val m: Message = Message().add("ELECTION", leadingID)
-        network.sendToNeighbors(leadingID, m.toJson())
+        network.sendToNeighbors(id, m.toJson())
+    }
+
+    private fun propagateWin(leadingID: Int){
+        currentElectionLeader = Int.MIN_VALUE
+        System.out.println("Node $id - propagated win - winner id is $leadingID")
+        val m: Message = Message().add("WIN", leadingID)
+        network.sendToNeighbors(id, m.toJson())
     }
 
     internal open fun handleMessage(loops: Int, filepath: String): Boolean {
         network.incrementMessageCounter()
         val rm: NodeMessage = network.receive(id) ?: return true
         val m: Message = Message.fromJson(rm.payload)
-        println("node: $id handling message ${m.toJson()}")
+        //println("node: $id handling message ${m.toJson()}")
 
         //val hopcount = handleHopCount(m)
         //handleLogging(loops, hopcount, filepath)
 
+        if (m.query("ELECTION") != null){
         when {
-            m.query("ELECTION")?.toInt() ?: Int.MIN_VALUE > currentElectionLeader -> propagateElection(m.query("ELECTION")!!.toInt())
+            m.query("ELECTION")!!.toInt() == id -> declareWin()
+            m.query("ELECTION")!!.toInt() > currentElectionLeader -> propagateElection(m.query("ELECTION")!!.toInt())
+            m.query("ELECTION")!!.toInt() <= currentElectionLeader -> System.out.println("Node $id - ignoring election desire from ${m.query("ELECTION")!!.toInt()} - current lead is $currentElectionLeader")
+        }}
+        if (m.query("WIN") != null){
+            when {
+                m.query("WIN")!!.toInt() == id -> {
+                    currentElectionLeader = Int.MIN_VALUE
+                    System.out.println("########### node $id wins election ###########")
+                }
+                m.query("WIN")!!.toInt() == currentElectionLeader -> propagateWin(m.query("WIN")!!.toInt())
 
-        }
+            }}
 
         //network.unicast(id, (id + 1) % n_nodes, m.toJson())
         //println("Resend regular token from $id to ${(id + 1) % n_nodes}")

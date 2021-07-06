@@ -9,12 +9,13 @@ import dto.NodeDTO
 import java.io.File
 import java.io.FileReader
 import java.lang.reflect.Type
+import kotlin.random.Random
 
 
 class Generator(val n: Int) {
     private val serializer = Gson()
 
-    public fun makeNetwork(type: NetworkType, m: Int? = 0): NetworkDTO {
+     fun makeNetwork(type: NetworkType, m: Int? = 0): NetworkDTO {
         return when (type) {
             NetworkType.RING -> generateRing()
             NetworkType.RANDOM -> generateRandom(m!!)
@@ -24,8 +25,34 @@ class Generator(val n: Int) {
     }
 
     private fun generateRandom(m: Int): NetworkDTO {
-        TODO()
-    }
+        val size = n
+        val nodes = mutableListOf<NodeDTO>()
+        val edges = mutableListOf<EdgeDTO>()
+        val nodesDegree =  IntArray(size) { 0 }
+
+        for (i in 0 until size) {
+            nodes.add(NodeDTO(i, "node-$i"))
+        }
+
+        for (i in 0 until size) {
+            var found = false
+            while (!found) {
+                val target = Random.nextInt(size)
+                if (nodesDegree[target] <= m){
+                    edges.add(EdgeDTO(i, target))
+                    found = true
+                }
+            }
+        }
+
+        for (i in 0 until Random.nextInt(n * n)){
+            val target = Random.nextInt(size)
+            if (nodesDegree[target] <= m){
+                edges.add(EdgeDTO(i, target))
+            }
+        }
+
+        return NetworkDTO(NetworkType.RANDOM, nodes, edges)    }
 
     private fun generateRing(): NetworkDTO {
         val size = n

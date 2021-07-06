@@ -9,18 +9,31 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.pow
 
-class Simulator(val m: Int, val nNodes: Int = 10) {
-    fun simulate() {
+class Simulator(val m: Int) {
 
-        val g = Generator(10)
+    /*
+    Wie startet der Algorithmus?
+    - Random mit einer election
+
+    Wann ist der Algorithmus zu Ende?
+    - ring -> wenn ring ein mal umrundet wurde
+    - random ->
+
+    Was ist die „Message Extinction“?
+    - wenn eine election message nicht weitergeleitet wird auf grund einer bereits besseren konkurenten
+     */
+
+    fun simulate() {
+        val nNodes = 100
+
+        val g = Generator(nNodes)
         val network = g.makeNetwork(NetworkType.RING)
         g.serialize("data/graph.txt", network)
         g.deserialize("data/graph.txt")
-        val n = Network(10, "log.txt")
+        val n = Network(nNodes, "log.txt")
 
         val timeStamp = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(Date())
-        val nNodes = 10
-        val duration = 4
+        val duration = 10
         val filepath = "log-$timeStamp.txt"
         Utils.log(
             String.format("Simulate %d nodes for %d seconds\n", nNodes, duration),
