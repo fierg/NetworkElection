@@ -1,7 +1,0 @@
-class Simulator {
-
-}
-
-fun main() {
-
-}
