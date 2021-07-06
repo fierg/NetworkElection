@@ -15,7 +15,7 @@ import kotlin.random.Random
 class Generator(val n: Int) {
     private val serializer = Gson()
 
-     fun makeNetwork(type: NetworkType, m: Int? = 0): NetworkDTO {
+    fun makeNetwork(type: NetworkType, m: Int? = 0): NetworkDTO {
         return when (type) {
             NetworkType.RING -> generateRing()
             NetworkType.RANDOM -> generateRandom(m!!)
@@ -28,7 +28,7 @@ class Generator(val n: Int) {
         val size = n
         val nodes = mutableListOf<NodeDTO>()
         val edges = mutableListOf<EdgeDTO>()
-        val nodesDegree =  IntArray(size) { 0 }
+        val nodesDegree = IntArray(size) { 0 }
 
         for (i in 0 until size) {
             nodes.add(NodeDTO(i, "node-$i"))
@@ -38,21 +38,25 @@ class Generator(val n: Int) {
             var found = false
             while (!found) {
                 val target = Random.nextInt(size)
-                if (nodesDegree[target] <= m){
+                if (nodesDegree[target] <= m && target != i) {
                     edges.add(EdgeDTO(i, target))
                     found = true
                 }
             }
         }
 
-        for (i in 0 until Random.nextInt(n * n)){
+        for (i in 0 until Random.nextInt(n * n)) {
+            val source = Random.nextInt(size)
             val target = Random.nextInt(size)
-            if (nodesDegree[target] <= m){
-                edges.add(EdgeDTO(i, target))
+            if (Random.nextDouble(0.0, 1.0) < 0.3) {
+                if (nodesDegree[target] <= m && target != source) {
+                    edges.add(EdgeDTO(source, target))
+                }
             }
         }
 
-        return NetworkDTO(NetworkType.RANDOM, nodes, edges)    }
+        return NetworkDTO(NetworkType.RANDOM, nodes, edges)
+    }
 
     private fun generateRing(): NetworkDTO {
         val size = n

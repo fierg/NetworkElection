@@ -1,9 +1,9 @@
 package network
 
+import generator.NetworkType
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import network.event.Event.logToFile
 import network.message.Message
 import network.message.NodeMessage
 import kotlin.random.Random
@@ -17,13 +17,14 @@ open class Node(
     private val n_nodes: Int,
     private val network: Network,
     private val filepath: String,
-)  {
+) {
     private val t_main: Thread
     private var stop = false
     private val p = 0.3
     private var currentElectionLeader = Int.MIN_VALUE
+    private var currentWinner = Int.MIN_VALUE
 
-    internal fun sleep(millis: Int) {
+    private fun sleep(millis: Int) {
         try {
             Thread.sleep(millis.toLong())
         } catch (e: InterruptedException) {
@@ -34,7 +35,6 @@ open class Node(
     // first token
     private fun run(filepath: String) {
         startElectionAtRandomTime()
-        //issueFirstToken()
         var loops = 0
         while (true) {
             loops++
@@ -45,10 +45,10 @@ open class Node(
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun startElectionAtRandomTime(){
+    private fun startElectionAtRandomTime() {
         GlobalScope.launch {
             sleep(Random.nextInt(500))
-            if (Random.nextDouble(0.0,1.0) < p){
+            if (Random.nextDouble(0.0, 1.0) < p) {
                 startElection()
             } else {
                 sleep(500 + Random.nextInt(100))
@@ -60,6 +60,16 @@ open class Node(
         System.out.println("Node $id - started election")
         val m: Message = Message().add("ELECTION", id)
         network.sendToNeighbors(id, m.toJson())
+        if (currentElectionLeader < id)
+            currentElectionLeader = id
+
+        if (network.type == NetworkType.RANDOM)
+            sleep(5000)
+        if (currentElectionLeader == id) {
+            System.out.println("Node $id - didnt receive higher election candidate - wins election")
+            val m: Message = Message().add("WIN", id)
+            network.sendToNeighbors(id, m.toJson())
+        }
     }
 
     private fun declareWin() {
@@ -68,14 +78,14 @@ open class Node(
         network.sendToNeighbors(id, m.toJson())
     }
 
-    private fun propagateElection(leadingID: Int){
+    private fun propagateElection(leadingID: Int) {
         currentElectionLeader = leadingID
         System.out.println("Node $id - propagated election - leading id is $leadingID")
         val m: Message = Message().add("ELECTION", leadingID)
         network.sendToNeighbors(id, m.toJson())
     }
 
-    private fun propagateWin(leadingID: Int){
+    private fun propagateWin(leadingID: Int) {
         currentElectionLeader = Int.MIN_VALUE
         System.out.println("Node $id - propagated win - winner id is $leadingID")
         val m: Message = Message().add("WIN", leadingID)
@@ -88,51 +98,51 @@ open class Node(
         val m: Message = Message.fromJson(rm.payload)
         //println("node: $id handling message ${m.toJson()}")
 
-        //val hopcount = handleHopCount(m)
-        //handleLogging(loops, hopcount, filepath)
-
-        if (m.query("ELECTION") != null){
-        when {
-            m.query("ELECTION")!!.toInt() == id -> declareWin()
-            m.query("ELECTION")!!.toInt() > currentElectionLeader -> propagateElection(m.query("ELECTION")!!.toInt())
-            m.query("ELECTION")!!.toInt() <= currentElectionLeader -> System.out.println("Node $id - ignoring election desire from ${m.query("ELECTION")!!.toInt()} - current lead is $currentElectionLeader")
-        }}
-        if (m.query("WIN") != null){
-            when {
-                m.query("WIN")!!.toInt() == id -> {
-                    currentElectionLeader = Int.MIN_VALUE
-                    System.out.println("########### node $id wins election ###########")
-                }
-                m.query("WIN")!!.toInt() == currentElectionLeader -> propagateWin(m.query("WIN")!!.toInt())
-
-            }}
-
-        //network.unicast(id, (id + 1) % n_nodes, m.toJson())
-        //println("Resend regular token from $id to ${(id + 1) % n_nodes}")
+        handleElectionMessage(m)
+        handleWinMessage(m)
 
         return false
     }
 
+    private fun handleWinMessage(m: Message) {
+        if (network.type == NetworkType.RING) {
+            if (m.query("WIN") != null) {
+                when {
+                    m.query("WIN")!!.toInt() == id -> {
+                        currentElectionLeader = Int.MIN_VALUE
+                        System.out.println("########### node $id wins election ###########")
+                    }
+                    m.query("WIN")!!.toInt() == currentElectionLeader -> propagateWin(m.query("WIN")!!.toInt())
 
-    private fun handleHopCount(m: Message): Int {
-        var hopcount: Int = m.query("hopcount")!!.toInt()
-        hopcount++
-        m.add("hopcount", hopcount)
-        return hopcount
-    }
-
-
-    private fun handleLogging(loops: Int, hopcount: Int, filepath: String) {
-        if (id == 0 && loops % 1000 == 0) {
-            logToFile(String.format("hopcount is %d\n", hopcount), filepath)
+                }
+            }
+        } else {
+            if (m.query("WIN") != null) {
+                val winner = m.query("WIN")!!.toInt()
+                if (winner == currentElectionLeader) {
+                    currentElectionLeader = Int.MIN_VALUE
+                    if (currentWinner != winner)
+                        propagateWin(m.query("WIN")!!.toInt())
+                }
+            }
         }
     }
 
-    internal open fun issueFirstToken() {
-        if (id == 0) {
-            // I am node 1 and will create the token
-            val m: Message = Message().add("token", "true").add("hopcount", 0)
-            network.unicast(id, (id + 1) % n_nodes, m.toJson())
+    private fun handleElectionMessage(m: Message) {
+        if (m.query("ELECTION") != null) {
+            when {
+                m.query("ELECTION")!!.toInt() == id -> if (network.type == NetworkType.RING) declareWin()
+                m.query("ELECTION")!!.toInt() > currentElectionLeader -> propagateElection(
+                    m.query("ELECTION")!!.toInt()
+                )
+                m.query("ELECTION")!!.toInt() <= currentElectionLeader -> System.out.println(
+                    "Node $id - ignoring election desire from ${
+                        m.query(
+                            "ELECTION"
+                        )!!.toInt()
+                    } - current lead is $currentElectionLeader"
+                )
+            }
         }
     }
 

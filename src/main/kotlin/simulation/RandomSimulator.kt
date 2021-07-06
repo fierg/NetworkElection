@@ -3,13 +3,11 @@ package simulation
 import generator.Generator
 import generator.NetworkType
 import network.Network
-import network.Node
 import network.Utils
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.pow
 
-class Simulator(val m: Int) {
+class RandomSimulator(val n: Int, val m: Int) {
 
     /*
     Wie startet der Algorithmus?
@@ -24,19 +22,18 @@ class Simulator(val m: Int) {
      */
 
     fun simulate() {
-        val nNodes = 100
-
+        val nNodes = n
         val g = Generator(nNodes)
-        val network = g.makeNetwork(NetworkType.RING)
-        g.serialize("data/graph.txt", network)
-        g.deserialize("data/graph.txt")
+        val network = g.makeNetwork(NetworkType.RANDOM, m)
+        g.serialize("data/random_graph.txt", network)
+        g.deserialize("data/random_graph.txt")
         val n = Network(nNodes, "log.txt")
 
         val timeStamp = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(Date())
         val duration = 10
         val filepath = "log-$timeStamp.txt"
         Utils.log(
-            String.format("Simulate %d nodes for %d seconds\n", nNodes, duration),
+            String.format("Simulate random graph with %d nodes for %d seconds\n", nNodes, duration),
             filepath
         )
 
@@ -61,6 +58,6 @@ class Simulator(val m: Int) {
 }
 
 fun main() {
-    val m = Simulator(6)
+    val m = RandomSimulator(100, 6)
     m.simulate()
 }
