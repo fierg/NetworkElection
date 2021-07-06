@@ -3,6 +3,9 @@ package network
 import network.message.MessageQueue
 import network.message.MessageType
 import network.message.NodeMessage
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.SimpleGraph
 import java.util.concurrent.atomic.AtomicInteger
 
 class Network(
@@ -11,6 +14,7 @@ class Network(
     val timeStamp: String? = null
 ) {
     private val mqueues: Array<MessageQueue?> = arrayOfNulls(n_nodes)
+    val graph: Graph<Node, DefaultEdge> = SimpleGraph(DefaultEdge::class.java)
 
     init {
         for (i in 0 until n_nodes) mqueues[i] = MessageQueue()

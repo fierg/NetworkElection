@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.pow
 
-class Simulation {
+class Simulator(val m: Int, val nNodes: Int = 10) {
     fun simulate() {
 
         val timeStamp = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(Date())
@@ -20,20 +20,11 @@ class Simulation {
         )
 
         // Create network
-        val network = Network(nNodes.toDouble().pow(2).toInt(), filepath = filepath)
+        val network = Network(nNodes, filepath = filepath)
 
         // Create all nodes and start them
-        val nodes = (0 until nNodes).map { i ->
-            (0 until nNodes).map { j ->
-                Node(
-                    (i * nNodes) + j,
-                    nNodes.toDouble().pow(2).toInt(),
-                    network,
-                    filepath = filepath,
-                    logTimeStamp = timeStamp,
-                )
-            }.toTypedArray()
-        }.toTypedArray()
+        val nodes = hashMapOf<Int, Node>()
+        for (n_id in 0 until nNodes) nodes[n_id] = Node(n_id, nNodes, network, filepath)
 
 
         // Wait for the required duration
@@ -47,15 +38,13 @@ class Simulation {
         Utils.log("Total messages sent: ${network.getMessageCounter()}")
 
         // Tell all nodes to stop and wait for the threads to terminate
-        for (nodesArray in nodes)
-            for (node in nodesArray)
-                node.stop()
+        for (node in nodes.values) node.stop()
 
         Utils.log("All nodes stopped. Terminating.", filepath)
     }
 }
 
 fun main() {
-    val m = Simulation()
+    val m = Simulator(6)
     m.simulate()
 }

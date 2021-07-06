@@ -1,10 +1,8 @@
 package network
 
 import network.event.Event.logToFile
-import network.event.EventType
 import network.message.Message
 import network.message.NodeMessage
-import java.util.concurrent.atomic.AtomicInteger
 
 
 /*
@@ -15,7 +13,6 @@ open class Node(
     private val n_nodes: Int,
     private val network: Network,
     private val filepath: String,
-    private val logTimeStamp: String,
 )  {
     private val t_main: Thread
     private var stop = false
@@ -55,7 +52,7 @@ open class Node(
     }
 
 
-    internal fun handleHopCount(m: Message): Int {
+    private fun handleHopCount(m: Message): Int {
         var hopcount: Int = m.query("hopcount")!!.toInt()
         hopcount++
         m.add("hopcount", hopcount)
@@ -63,7 +60,7 @@ open class Node(
     }
 
 
-    internal fun handleLogging(loops: Int, hopcount: Int, filepath: String) {
+    private fun handleLogging(loops: Int, hopcount: Int, filepath: String) {
         if (id == 0 && loops % 1000 == 0) {
             logToFile(String.format("hopcount is %d\n", hopcount), filepath)
         }
@@ -75,16 +72,6 @@ open class Node(
             val m: Message = Message().add("token", "true").add("hopcount", 0)
             network.unicast(id, (id + 1) % n_nodes, m.toJson())
         }
-    }
-
-    private fun getVectorClockString(vectorClock: IntArray): String {
-        val sb = StringBuilder()
-        for (i in vectorClock) {
-            sb.append(i)
-            sb.append(",")
-        }
-        sb.deleteCharAt(sb.length - 1)
-        return sb.toString()
     }
 
     fun stop() {
