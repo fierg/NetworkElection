@@ -16,7 +16,7 @@ class Network(
     val timeStamp: String? = null
 ) {
     private val mqueues: Array<MessageQueue?> = arrayOfNulls(n_nodes)
-    private val graph: Graph<Node, DefaultEdge> = SimpleGraph(DefaultEdge::class.java)
+    val graph: Graph<Node, DefaultEdge> = SimpleGraph(DefaultEdge::class.java)
     var vertices: List<Node>? = null
     var type: NetworkType? = null
 

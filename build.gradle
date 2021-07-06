@@ -15,10 +15,16 @@ dependencies {
     implementation "org.jgrapht:jgrapht-core:1.5.1"
     implementation "org.jgrapht:jgrapht-io:1.5.1"
     implementation "org.jgrapht:jgrapht:1.5.1"
+    // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-ext
+    implementation group: 'org.jgrapht', name: 'jgrapht-ext', version: '1.5.1'
+
     implementation("com.google.code.gson:gson:2.7")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    // https://mvnrepository.com/artifact/jgraph/jgraph
+    implementation group: 'jgraph', name: 'jgraph', version: '5.13.0.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
 }
 
 test {
