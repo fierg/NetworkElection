@@ -1,5 +1,7 @@
 package network
 
+import dto.NetworkDTO
+import network.message.Message
 import network.message.MessageQueue
 import network.message.MessageType
 import network.message.NodeMessage
@@ -14,7 +16,8 @@ class Network(
     val timeStamp: String? = null
 ) {
     private val mqueues: Array<MessageQueue?> = arrayOfNulls(n_nodes)
-    val graph: Graph<Node, DefaultEdge> = SimpleGraph(DefaultEdge::class.java)
+    private val graph: Graph<Node, DefaultEdge> = SimpleGraph(DefaultEdge::class.java)
+     var vertices: List<Node>? = null
 
     init {
         for (i in 0 until n_nodes) mqueues[i] = MessageQueue()
@@ -32,6 +35,15 @@ class Network(
         return messageCount.get()
     }
 
+    fun fromNetworkDTO(networkDTO: NetworkDTO){
+        networkDTO.nodes.forEach {
+            graph.addVertex(Node(it.id, n_nodes,this,filepath))
+        }
+        vertices = graph.vertexSet().sortedBy { it.id }
+        networkDTO.edges.forEach {
+            graph.addEdge(vertices!![it.from], vertices!![it.to])
+        }
+    }
 
     fun unicast(sender_id: Int, receiver_id: Int, message: String) {
         if (receiver_id < 0 || receiver_id >= n_nodes) {
@@ -72,6 +84,16 @@ class Network(
             raw.receiverId = l
             mqueues[l]?.put(raw)
         }
+    }
+
+    fun sendToNeighbors(sender_id: Int, message: String){
+        if (sender_id < -1 || sender_id >= n_nodes) {
+            System.err.printf("Network::broadcast: unknown sender id %d\n", sender_id)
+            return
+        }
+
+        val neighbors = graph.edgesOf(vertices!![sender_id]).toMutableSet().filter { graph.getEdgeSource(it).id == sender_id }.map { graph.getEdgeTarget(it).id }
+        multicast(sender_id, neighbors, message)
     }
 
     fun receive(receiver_id: Int): NodeMessage? {
