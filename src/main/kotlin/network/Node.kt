@@ -63,12 +63,13 @@ open class Node(
         if (currentElectionLeader < id)
             currentElectionLeader = id
 
-        if (network.type == NetworkType.RANDOM)
+        if (network.type == NetworkType.RANDOM) {
             sleep(5000)
-        if (currentElectionLeader == id) {
-            System.out.println("Node $id - didnt receive higher election candidate - wins election")
-            val m: Message = Message().add("WIN", id)
-            network.sendToNeighbors(id, m.toJson())
+            if (currentElectionLeader == id) {
+                System.out.println("Node $id - didnt receive higher election candidate - wins election")
+                val m: Message = Message().add("WIN", id)
+                network.sendToNeighbors(id, m.toJson())
+            }
         }
     }
 
