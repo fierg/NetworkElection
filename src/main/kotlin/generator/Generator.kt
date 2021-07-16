@@ -49,7 +49,7 @@ class Generator(val n: Int) {
             val source = Random.nextInt(size)
             val target = Random.nextInt(size)
             if (Random.nextDouble(0.0, 1.0) < 0.3) {
-                if (nodesDegree[target] <= m && target != source) {
+                if (nodesDegree[target] <= m && target != source && !edges.contains(EdgeDTO(source,target))) {
                     edges.add(EdgeDTO(source, target))
                 }
             }

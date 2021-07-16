@@ -20,9 +20,9 @@ class VisualDemo {
 fun main() {
     val nNodes = 10
     val g = Generator(nNodes)
-    val network = g.makeNetwork(NetworkType.RING)
-    g.serialize("data/ring_graph.txt", network)
-    g.deserialize("data/ring_graph.txt")
+    val network = g.makeNetwork(NetworkType.RANDOM)
+    g.serialize("data/random_graph.txt", network)
+    g.deserialize("data/random_graph.txt")
     val n = Network(nNodes, "log.txt")
     // Create network
     n.fromNetworkDTO(network)
@@ -31,7 +31,7 @@ fun main() {
     layout.execute(graphAdapter.getDefaultParent())
 
     val image = mxCellRenderer.createBufferedImage(graphAdapter, null, 2.0, Color.WHITE, true, null)
-    val imgFile = File("data/graph.png")
+    val imgFile = File("data/random_graph.png")
     ImageIO.write(image, "PNG", imgFile)
 
 }
